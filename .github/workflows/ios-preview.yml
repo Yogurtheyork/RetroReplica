@@ -1,0 +1,43 @@
+name: iOS Preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare XcodeGen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen 2>&1 | tee artifacts/xcodegen-install.log
+          fi
+          xcodegen --version | tee artifacts/xcodegen-version.log
+
+      - name: Build, launch, and capture simulator
+        run: bash scripts/ios-preview.sh
+
+      - name: Upload screenshot and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-preview
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14
