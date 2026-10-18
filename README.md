@@ -1,39 +1,92 @@
-# RetroReplica
+# Retro SwiftUI 課堂作業
 
-SwiftUI coursework recreating the Retro home screen. 第一階段只顯示黑底白字「第 42 週」，先驗證 macOS 建置、模擬器啟動與截圖。參考圖：`reference/retro-home.jpg`，不會打包進 App。
+在原有 Retro.xcodeproj 與 MyApp target 中完成的一頁靜態 Retro 首頁。使用固定本地資料，沒有登入、API 或其他服務；底部圖示僅展示外觀。
 
-## Windows / WSL
+## 開啟與驗證
 
-在這個 repository 編輯 Swift 與 `project.yml`。WSL 無法執行 Xcode 或 iOS Simulator，透過 GitHub Actions 建置：
+在 Xcode 開啟 Retro.xcodeproj，選擇 Retro scheme 與 iPhone 模擬器後 Run。
+
+1. 在主內容向上滑，確認看到第二列 linlin、yuting 等好友。
+2. 在每日照片左右滑，確認能看到週六、週日。
+3. 在好友卡片左右滑，確認能看到下一位好友。
+4. 上下滑動時，底部五個圖示應固定；最後一列應能完整滑到導覽列上方。
+5. 檢查標題、票券文字、圖片與系統狀態列沒有重疊或異常裁切。
+
+黑底白字是刻意比照參考圖，未額外實作淺色主題。時間、電量、Home indicator 由系統呈現。原始參考圖保存在 reference/retro-home.jpg，不會打包進 App。
+
+## 必做要求對照
+
+| 要求 | 實作位置 |
+| --- | --- |
+| VStack | ContentView 主內容、FriendCardView 名字與卡片 |
+| HStack | WeekHeaderView、每週照片列、好友列、BottomBarView |
+| ZStack | DayPhotoView 疊放照片、漸層、星期文字 |
+| Text | 週數、星期、好友姓名、TicketView 票券 |
+| Image | 每日照片與頭像使用 Assets；標題與底列使用 SF Symbols |
+| ScrollView | ContentView 垂直捲動；照片與好友列水平捲動 |
+| Assets 圖片 | 四個 imageset 都包含實際 JPEG 與 Contents.json |
+| 多個 modifier | padding、font、background、foregroundStyle、frame、clipShape 等 |
+| 上下捲動內容 | 七天照片與兩列共六張好友卡片，超過一般 iPhone 可視高度 |
+| 多個 Swift 檔案 | 八個畫面／資料檔與原有 App 入口 |
+| property 接收資料 | week、photos、imageName、day、post、cardWidth、title、selectedSymbol |
+
+## 元件與 property 的用途
+
+- ContentView：組合垂直主內容；GeometryReader 取得寬度，卡片占 61%，露出下一張。safeAreaInset 固定底部列並保留其空間。
+- WeekHeaderView(week:)：接收週數，排列標題、相簿與訊息圖示。
+- WeekPhotoStripView(photos:)：接收 DayPhoto 陣列，以 ForEach 重用每日照片元件。
+- DayPhotoView(imageName:day:)：接收 Assets 名稱與星期，在 ZStack 裡疊上漸層與文字。
+- FriendCardView(post:cardWidth:)：post 提供姓名、頭像、照片與票券類型；cardWidth 控制大小。同一元件可顯示不同好友。
+- TicketView(title:)：接收活動名稱，用真正 Text 與容器重建白色票券；其他欄位是固定示範文字。
+- BottomBarView(selectedSymbol:)：接收目前頁面的圖示名稱，決定白色選取狀態；其他為灰色，通知下方有紅點。
+- SampleData：集中七天照片與六位好友資料。DayPhoto、FriendPost 使用 Identifiable，讓 ForEach 能分辨每筆資料。
+
+MyApp 是既有 PBXFileSystemSynchronizedRootGroup，目錄已綁定 Retro target，新增 Swift 與 Assets 會自動編入；未另建專案。
+
+## 驗證紀錄與未驗證項目
+
+- iOS Simulator SDK Debug build 已成功（arm64、x86_64），紀錄：artifacts/build.log。
+- iOS Simulator SDK Swift 型別檢查已通過，紀錄：artifacts/typecheck.log。
+- 既有 target 的 macOS Debug build 已成功，紀錄：artifacts/mac-build.log。
+- 已檢查四個 imageset 的 JSON、圖片存在，App 產物包含 Assets.car。
+- 截圖腳本已通過 bash -n 語法檢查。
+- 自動執行環境無法連上 CoreSimulatorService；使用者已在 iPhone 17 模擬器取得成品截圖（2026-10-18），保存於 screenshots/retro-home.png。截圖確認首頁已顯示；上下與左右捲動仍需人工操作驗證。
+- 預覽使用 Xcode 27 建議的具名 #Preview 巨集；此受限命令列環境無法啟動巨集外掛，請在 Xcode Canvas 檢查預覽。
+
+## 原始畫面與成品對照
+
+| 原始 Retro 參考畫面 | SwiftUI 成品（iPhone 17） |
+| --- | --- |
+| <img src="reference/retro-home.jpg" width="300" alt="原始 Retro 參考畫面"> | <img src="screenshots/retro-home.png" width="300" alt="SwiftUI 成品，使用者於 iPhone 17 模擬器截圖"> |
+
+成品截圖由使用者提供，未修改；替換本地照片，保留週數、卡片、票券與底部導覽的參考排版。
+
+## 截圖及作業展示
+
+先在一般 macOS 環境啟動 iPhone 模擬器，再執行：
 
 ```bash
-cd /home/york/projects/iOS/RetroReplica
-git status
-git add .gitignore README.md project.yml RetroReplica scripts .github
-git commit -m "Set up SwiftUI app and iOS preview workflow"
-git push origin main
+cd <專案所在資料夾>
+bash scripts/capture-simulator.sh
 ```
 
-到 GitHub → Actions → iOS Preview 查看執行。也可在 Actions 頁按 Run workflow 手動執行。完成後下載 `ios-preview` artifact，解壓縮並確認 `retro-home.png` 顯示「第 42 週」。綠色勾勾只代表流程成功，仍需查看截圖。
+也可把 iPhone 的 UDID 作為第一個參數。腳本會建置、安裝並啟動 App；等你檢查畫面與捲動後，在終端機按 Enter，即儲存真實模擬器截圖至 artifacts/retro-home.png。不修改系統時間或電量。
 
-流程使用 macOS runner 的預設 Xcode、列出已安裝的 Xcode / SDK / 模擬器，動態選擇可用且 iOS 17 以上的 iPhone，產生專案並編譯 Simulator 版本（停用簽署），等待模擬器開機、安裝並啟動 App，最後截圖。沒有符合條件的裝置時會明確失敗。
+展示時將 reference/retro-home.jpg 與 artifacts/retro-home.png 並排。也可用 Simulator 的 File → Save Screen。請先完成上方操作檢查，再作為正式成果。
 
-`ios-preview` 內包含 `preview.log`、`build.log`、裝置清單與截圖；檔案依流程進度產生，失敗時也會上傳已產生的紀錄，保留 14 天。若失敗，請先查看 Actions 的紅色步驟及 artifact 紀錄。
+## 圖片來源
 
-## 在 Mac 開啟
+替代素材取自 [ianare/exif-samples](https://github.com/ianare/exif-samples)。該 repository README 說明使用者貢獻圖片採 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)。原圖未修改，顯示裁切由 SwiftUI scaledToFill 完成，原有 EXIF 資訊保留在 JPEG。
 
-需要 Xcode、Command Line Tools 與已安裝的 iOS 17 以上模擬器 runtime。先開啟 Xcode 完成首次安裝，再執行：
+| Assets 名稱 | 原始路徑 |
+| --- | --- |
+| TravelLake | jpg/gps/DSCN0010.jpg |
+| TravelGarden | jpg/gps/DSCN0021.jpg |
+| TravelCity | jpg/gps/DSCN0040.jpg |
+| AvatarCamera | jpg/Canon_40D.jpg |
 
-```bash
-brew install xcodegen
-xcodegen generate
-open RetroReplica.xcodeproj
-```
+原始參考畫面來自 Yogurtheyork/RetroReplica/reference/retro-home.jpg，僅作課堂比較，不作 App UI。
 
-選擇 `RetroReplica` scheme 與 iPhone 模擬器，按 Run。也可在 repository 根目錄執行 `bash scripts/ios-preview.sh`，產生與 CI 相同的本機截圖。產生的 Xcode 專案、DerivedData 與 artifacts 不提交；專案設定以 `project.yml` 為準。模擬器版本不需要付費 Apple 開發者帳號或簽署憑證。
+## 專案設定
 
-## 後續階段
-
-確認第一次 Actions 截圖後，再依參考圖拆分 SwiftUI 元件、加入本地照片、水平與垂直捲動及固定底部導覽列。這一版沒有登入、API 或完整 Retro 排版。
-
-設定參考：[XcodeGen project spec](https://github.com/yonaskolb/XcodeGen/blob/master/Docs/ProjectSpec.md)、[GitHub macOS runner](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md)。
+直接使用已提交的 Retro.xcodeproj 與 Retro scheme。原有 project.yml 亦已將來源改為 MyApp，供需要 XcodeGen 的既有工作流程使用；原有 GitHub Actions 設定保留，未新增流程。

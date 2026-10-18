@@ -14,7 +14,7 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: RetroReplica
+      - path: MyApp
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
